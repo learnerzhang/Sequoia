@@ -24,4 +24,4 @@ logging.getLogger().setLevel(logging.INFO)
 #     time.sleep(1)
 
 settings.init()
-work_flow.process()
+work_flow.process(update=False)

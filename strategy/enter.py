@@ -1,5 +1,5 @@
 # -*- encoding: UTF-8 -*-
-
+import numpy as np
 import talib as tl
 import pandas as pd
 import logging
@@ -42,6 +42,8 @@ def check_ma(code_name, data, end_date=None, ma_days=250):
         return False
 
     ma_tag = 'ma' + str(ma_days)
+    data['close'] = data['close'].astype(float)
+    close = np.array(data['close'], dtype=np.object)
     data[ma_tag] = pd.Series(tl.MA(data['close'].values, ma_days), index=data.index.values)
 
     begin_date = data.iloc[0].date
@@ -82,7 +84,8 @@ def check_volume(code_name, data, end_date=None, threshold=60):
     # if code_name[2] < 3000000:
     #     return False
 
-    data['vol_ma5'] = pd.Series(tl.MA(data['volume'].values, 5), index=data.index.values)
+    volume_data = np.array([float(x) for x in data['volume']])
+    data['vol_ma5'] = pd.Series(tl.MA(volume_data, 5), index=data.index.values)
     if end_date is not None:
         mask = (data['date'] <= end_date)
         data = data.loc[mask]

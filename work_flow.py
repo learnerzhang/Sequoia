@@ -3,13 +3,13 @@
 import data_fetcher
 import utils
 import strategy.enter as enter
-from strategy import turtle_trade
+from strategy import turtle_trade, pe
 from strategy import backtrace_ma250
 from strategy import breakthrough_platform
 from strategy import parking_apron
 from strategy import low_atr
 from strategy import keep_increasing
-import tushare as ts
+import baostock as bs
 import notice
 import logging
 import db
@@ -20,31 +20,55 @@ import settings
 import pandas as pd
 
 
-def process():
+def process(update=False):
     logging.info("************************ process start ***************************************")
-    try:
-        all_data = ts.get_today_all()
-        subset = all_data[['code', 'name', 'nmc']]
-        subset.to_csv(settings.STOCKS_FILE, index=None, header=True)
-        stocks = [tuple(x) for x in subset.values]
-        statistics(all_data, stocks)
-    except urllib.error.URLError as e:
-        subset = pd.read_csv(settings.STOCKS_FILE)
-        subset['code'] = subset['code'].astype(str)
-        stocks = [tuple(x) for x in subset.values]
+    if update:
+        try:
+            # 登陆系统 ####
+            lg = bs.login()
+            # 显示登陆返回信息
+            print('login respond error_code:' + lg.error_code + ', error_msg:' + lg.error_msg)
 
-    if utils.need_update_data():
-        utils.prepare()
-        data_fetcher.run(stocks)
-        check_exit()
+            dt = utils.get_recently_trade_date()
+            stock_rs = bs.query_all_stock(day=dt)
+
+            # print(stock_rs.data)
+            stock_df = stock_rs.get_data()
+            data_df = pd.DataFrame()
+            for code, status, name in zip(stock_df["code"], stock_df["tradeStatus"], stock_df["code_name"]):
+                if "ST" in name:
+                    continue
+                print("Downloading :" + code + " , name :" + name + " , status :" + status)
+                k_rs = bs.query_history_k_data_plus(code, settings.STOCK_FIELDS, start_date=dt, end_date=dt)
+                data_df = data_df.append(k_rs.get_data())
+                # print(result)
+            bs.logout()
+            data_df.to_csv(settings.STOCKS_FILE, encoding="utf-8", index=False, header=True)
+
+        except urllib.error.URLError as e:
+            print("Update Data Error ")
+
+    stock_trades = pd.read_csv(settings.STOCKS_FILE)
+    stock_names = pd.read_csv(settings.STOCK_NAME)
+    stock_pd = pd.merge(stock_trades, stock_names, how='left', on=['code', 'code'])
+    stock_pd['code'] = stock_pd['code'].astype(str)
+    # print(stock_pd.values)
+    stocks = [tuple((x[1], x[-1])) for x in stock_pd.values]
+    # print(stocks[0])
+    #if utils.need_update_data():
+    #    utils.prepare()
+    #    data_fetcher.run(stocks)
+    #     data_fetcher.run(stocks)
+    #    check_exit()
 
     strategies = {
         '海龟交易法则': turtle_trade.check_enter,
         '放量上涨': enter.check_volume,
-        # '突破平台': breakthrough_platform.check,
-        # '均线多头': keep_increasing.check,
-        # '停机坪': parking_apron.check,
-        # '回踩年线': backtrace_ma250.check,
+        '突破平台': breakthrough_platform.check,
+        '均线多头': keep_increasing.check,
+        '停机坪': parking_apron.check,
+        '回踩年线': backtrace_ma250.check,
+        # 'pe': pe.check,
     }
 
     if datetime.datetime.now().weekday() == 0:
@@ -61,7 +85,7 @@ def check(stocks, strategy, strategy_func):
     end = None
     m_filter = check_enter(end_date=end, strategy_fun=strategy_func)
     results = list(filter(m_filter, stocks))
-
+    utils.persist(strategy, results)
     logging.info('**************"{0}"**************\n{1}\n**************"{0}"**************\n'.format(strategy, results))
     notice.strategy('**************"{0}"**************\n{1}\n**************"{0}"**************\n'.format(strategy, results))
 
