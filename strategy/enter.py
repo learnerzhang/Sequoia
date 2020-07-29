@@ -91,7 +91,7 @@ def check_volume(code_name, data, end_date=None, threshold=60):
         data = data.loc[mask]
     if data.empty:
         return False
-    p_change = data.iloc[-1]['p_change']
+    p_change = data.iloc[-1]['pctChg']
     if p_change < 2 \
             or data.iloc[-1]['close'] < data.iloc[-1]['open']:
         return False

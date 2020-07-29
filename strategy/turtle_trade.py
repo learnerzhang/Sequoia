@@ -104,7 +104,7 @@ def calculate(code_name, data, end_date=None, threshold=20):
     t_shelve = db.ShelvePersistence()
     t_shelve.save(code_name, last_close, position_size)
 
- # last_close, position_size, atr
+    # last_close, position_size, atr
     result = (
         "N：{0}\n"
         "头寸规模：{1}手\n"

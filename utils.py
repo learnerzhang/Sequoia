@@ -3,12 +3,15 @@ import datetime
 from pandas.tseries.offsets import *
 import baostock as bs
 import xlrd
+import json
 import pandas as pd
 import os
 import settings
+from dao.redis_utils import RedisUtils
 
 ONE_HOUR_SECONDS = 60 * 60
 
+redisUtils = RedisUtils()
 
 # 获取股票代码列表
 def get_stocks(config=None):
@@ -42,32 +45,29 @@ def clean_files():
 
 
 # 读取本地数据文件
-def read_data(code_name):
-	stock = code_name[0]
+def read_data(code_name, redis=True):
+	code = code_name[0]
 	name = code_name[1]
-	file_name = stock + '_' + name + '.csv'
-	# print(file_name)
-	if os.path.exists(settings.DATA_DIR + "/" + file_name):
-		return pd.read_csv(settings.DATA_DIR + "/" + file_name)
+	if not redis:
+		file_name = str(code) + '_' + str(name) + '.csv'
+		print(file_name)
+		if os.path.exists(settings.DATA_DIR + "/" + file_name):
+			return pd.read_csv(settings.DATA_DIR + "/" + file_name)
 	else:
-		return None
-
-
-# 是否需要更新数据
-def need_update_data():
-	try:
-		code_name = ('sz.000001', '平安银行')
-		data = read_data(code_name)
-		if data is None:
-			return True
-		else:
-			start_time = next_weekday(data.iloc[-1].date)
-			current_time = datetime.datetime.now()
-			if start_time > current_time:
-				return False
-			return True
-	except IOError:
-		return True
+		results = redisUtils.smembers(code)
+		if len(results) > 0:
+			elems = sorted([json.loads(e) for e in results], key=lambda x: x['date'])
+			df = pd.DataFrame(elems)
+			# print(df.keys())
+			df["open"] = df['open'].astype(float)
+			df["high"] = df["high"].astype(float)
+			df["low"] = df["low"].astype(float)
+			df["close"] = df["close"].astype(float)
+			df["preclose"] = df["preclose"].astype(float)
+			df["volume"] = df["volume"].astype(float)
+			df["pctChg"] = df["pctChg"].astype(float)
+			return df
+	return None
 
 
 # 是否是工作日
@@ -118,7 +118,7 @@ def init_trade_date():
 
 	# 结果集输出到csv文件 ####
 	result.to_csv(settings.STOCKS_DATE, encoding="utf-8", index=False, header=True)
-	# print(result)
+	print(result)
 	# 登出系统 ####
 	bs.logout()
 
