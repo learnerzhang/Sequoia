@@ -53,12 +53,11 @@ def update_stock_daily(history=False):
 				continue
 			print("Downloading :" + code + " , name :" + name)
 			k_rs = bs.query_history_k_data_plus(code, settings.STOCK_FIELDS, start_date=st, end_date=et)
-			print(k_rs.get_data())
+			# print(k_rs.get_data())
 			stock_records = k_rs.get_data().to_dict('records')
 			for record in stock_records:
 				rJsonStr = json.dumps(record, indent=4, ensure_ascii=False).encode('utf-8')
 				r = redisUtils.sadd(code, rJsonStr)
-				print(r)
 			print("{} redis add finish".format(code))
 		bs.logout()
 	except IOError:
@@ -67,4 +66,4 @@ def update_stock_daily(history=False):
 
 if __name__ == '__main__':
 	# update_pool2redis()
-	update_stock_daily(history=True)
+	update_stock_daily(history=False)

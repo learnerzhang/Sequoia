@@ -13,6 +13,7 @@ ONE_HOUR_SECONDS = 60 * 60
 
 redisUtils = RedisUtils()
 
+
 # 获取股票代码列表
 def get_stocks(config=None):
 	if config:
@@ -95,6 +96,12 @@ def prepare():
 			os.makedirs(dir)
 
 
+def is_chuangyeban(code):
+	if code:
+		return code.split('.')[1].startswith('300')
+	return False
+
+
 def init_trade_date():
 	settings.init()
 
@@ -153,3 +160,4 @@ if __name__ == '__main__':
 	# init_trade_date()
 	dt = get_recently_trade_date()
 	print(dt)
+

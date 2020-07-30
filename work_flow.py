@@ -29,7 +29,7 @@ def process():
 	# codes = redisUtils.getAllKeys("*.*")
 	stock_info_str = redisUtils.get('Ashare')
 	stockInfoJson = json.loads(stock_info_str)
-	stocks = [(elem, stockInfoJson[elem][1])   for elem in stockInfoJson]
+	stocks = [(elem, stockInfoJson[elem][1]) for elem in stockInfoJson]  # 过滤 创业板
 	# print(stocks[0])
 
 	strategies = {
