@@ -31,7 +31,7 @@ def check(code_name, data, end_date=None, threshold=15):
     # 找出涨停日
     for index, row in data.iterrows():
         try:
-            if float(row['p_change']) > 9.5:
+            if float(row['pctChg']) > 9.5:
                 if turtle_trade.check_enter(code_name, origin_data, row['date'], threshold):
                     if check_internal(code_name, data, row):
                         flag = True
@@ -63,7 +63,7 @@ def check_internal(code_name, data, limitup_row):
 
     for index, row in consolidation_day23.iterrows():
         try:
-            if not (0.97 < (row['close'] / row['open']) < 1.03 and -5 < row['p_change'] < 5
+            if not (0.97 < (row['close'] / row['open']) < 1.03 and -5 < row['pctChg'] < 5
                     and row['close'] > limitup_price and row['open'] > limitup_price):
                 return False
         except KeyError as error:
