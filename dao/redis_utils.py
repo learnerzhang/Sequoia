@@ -44,3 +44,7 @@ class RedisUtils:
 
 	def getAllKeys(self, pattern):
 		return self.r.keys(pattern=pattern)
+
+if __name__ == '__main__':
+	redisUtils = RedisUtils()
+	print(redisUtils.getAllKeys('*'))

@@ -2,7 +2,7 @@
 import baostock as bs
 import pandas as pd
 import json
-import utils
+from utils import utils
 import logging
 import settings
 import schedule
@@ -23,7 +23,6 @@ def update_pool2redis():
 	# 显示登陆返回信息
 	print('login respond error_code:' + lg.error_code + ', error_msg:' + lg.error_msg)
 	dt = utils.get_recently_trade_date()
-	dt = '2020-07-20'
 	stock_rs = bs.query_all_stock(day=dt)
 	stock_df = stock_rs.get_data()
 	# print(stock_df)
